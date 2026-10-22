@@ -8,25 +8,24 @@ class GameScreen {
     this.manaRegen = 12;
     this.enemyGold = 0;
 
-    // Camino
+    // Camino Principal Mejorado con dos posibles desvíos tácticos
     this.path = [
-      { x: 180, y: 600 },
-      { x: 180, y: 450 },
-      { x: 80,  y: 450 },
-      { x: 80,  y: 250 },
-      { x: 280, y: 250 },
-      { x: 280, y: 100 },
-      { x: 180, y: 100 }
+      { x: 180, y: 600 }, // Inicio
+      { x: 180, y: 460 },
+      { x: 100, y: 380 }, // Desvío Izquierdo
+      { x: 100, y: 260 },
+      { x: 180, y: 180 }, // Reencuentro central
+      { x: 180, y: 100 }  // Base Enemiga (Meta)
     ];
 
-    // Arreglo de tropas activas en batalla
     this.troops = [];
 
-    // Parcelas de torres enemigas
+    // Parcelas estratégicas para torres enemigas ubicadas junto a los caminos
     this.plots = [
-      { id: 1, x: 130, y: 520, level: 1, type: 'Arquero', range: 65, costNext: 40 },
-      { id: 2, x: 130, y: 350, level: 0, type: 'Vacío',   range: 0,  costNext: 30 },
-      { id: 3, x: 230, y: 180, level: 0, type: 'Vacío',   range: 0,  costNext: 50 }
+      { id: 1, x: 140, y: 530, level: 1, type: 'Arquero', range: 65, costNext: 40 },
+      { id: 2, x: 60,  y: 320, level: 0, type: 'Vacío',   range: 0,  costNext: 30 },
+      { id: 3, x: 220, y: 320, level: 0, type: 'Vacío',   range: 0,  costNext: 45 },
+      { id: 4, x: 140, y: 140, level: 0, type: 'Vacío',   range: 0,  costNext: 60 }
     ];
 
     // UI
@@ -38,13 +37,13 @@ class GameScreen {
   }
 
   update(dt) {
-    // 1. Regenerar maná de forma suave
+    // Regenerar maná
     if (this.mana < this.maxMana) {
       this.mana += this.manaRegen * dt;
       if (this.mana > this.maxMana) this.mana = this.maxMana;
     }
 
-    // 2. Mover tropas a lo largo de la ruta
+    // Movimiento fluido de tropas por la ruta
     for (let i = this.troops.length - 1; i >= 0; i--) {
       const t = this.troops[i];
       const targetNode = this.path[t.pathIndex];
@@ -57,25 +56,23 @@ class GameScreen {
         if (dist < 3) {
           t.pathIndex++;
           if (t.pathIndex >= this.path.length) {
-            // Llegó a la Base Enemiga
             this.troops.splice(i, 1);
             continue;
           }
         } else {
-          // Avanzar suavemente a velocidad constante
           t.x += (dx / dist) * t.speed * dt;
           t.y += (dy / dist) * t.speed * dt;
         }
       }
     }
 
-    // 3. IA Enemiga: subir nivel o construir torres
+    // IA Enemiga: expansión y mejora de torres según el oro acumulado
     this.plots.forEach(plot => {
       if (this.enemyGold >= plot.costNext) {
         this.enemyGold -= plot.costNext;
         plot.level++;
         if (plot.level === 1) {
-          plot.type = plot.id % 2 === 0 ? 'Arquero' : 'Mago';
+          plot.type = plot.id % 2 === 0 ? 'Mago' : 'Arquero';
           plot.range = 70;
         } else {
           plot.range += 15;
@@ -86,13 +83,13 @@ class GameScreen {
   }
 
   render(ctx) {
-    // 1. Terreno
+    // 1. Terreno del mapa
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(0, 0, 360, 640);
 
-    // 2. Camino
+    // 2. Dibujar el Camino Táctico
     ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 36;
+    ctx.lineWidth = 38;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.beginPath();
@@ -106,14 +103,14 @@ class GameScreen {
     ctx.lineWidth = 4;
     ctx.stroke();
 
-    // 3. Meta / Base Enemiga
+    // 3. Base Enemiga (Meta)
     const base = this.path[this.path.length - 1];
     ctx.fillStyle = '#ef4444';
     ctx.beginPath();
     ctx.arc(base.x, base.y, 22, 0, Math.PI * 2);
     ctx.fill();
 
-    // 4. Dibujar Parcelas y Torres
+    // 4. Parcelas y Torres Enemigas
     this.plots.forEach(p => {
       if (p.level === 0) {
         ctx.fillStyle = '#475569';
@@ -136,25 +133,22 @@ class GameScreen {
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 10px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`${p.type} Lvl ${p.level}`, p.x, p.y - 18);
+        ctx.fillText(`${p.type} L${p.level}`, p.x, p.y - 18);
       }
     });
 
-    // 5. Dibujar Tropas en Pantalla
+    // 5. Tropas Activas
     this.troops.forEach(t => {
-      // Sombra
       ctx.fillStyle = 'rgba(0,0,0,0.3)';
       ctx.beginPath();
       ctx.arc(t.x, t.y + 6, 8, 0, Math.PI * 2);
       ctx.fill();
 
-      // Cuerpo del Duende
       ctx.fillStyle = t.color;
       ctx.beginPath();
       ctx.arc(t.x, t.y, 9, 0, Math.PI * 2);
       ctx.fill();
 
-      // Borde brillante
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1.5;
       ctx.stroke();
@@ -178,13 +172,12 @@ class GameScreen {
 
     ctx.fillStyle = '#fbbf24';
     ctx.font = '11px sans-serif';
-    ctx.fillText(`👑 ORO ENEMIGO: ${Math.floor(this.enemyGold)}`, 345, 45);
+    ctx.fillText(`👑 ORO ENEM.: ${Math.floor(this.enemyGold)}`, 345, 45);
 
     // 7. Panel Inferior
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 540, 360, 100);
 
-    // Botón Invocar
     ctx.fillStyle = this.mana >= this.goblinCost ? '#10b981' : '#334155';
     ctx.fillRect(this.spawnGoblinBtn.x, this.spawnGoblinBtn.y, this.spawnGoblinBtn.w, this.spawnGoblinBtn.h);
     ctx.fillStyle = '#ffffff';
@@ -194,7 +187,6 @@ class GameScreen {
     ctx.font = '10px sans-serif';
     ctx.fillText(`Costo: ${this.goblinCost} 💧`, this.spawnGoblinBtn.x + 75, this.spawnGoblinBtn.y + 42);
 
-    // Botón Regen Maná
     ctx.fillStyle = this.mana >= 50 ? '#8b5cf6' : '#334155';
     ctx.fillRect(this.upgradeManaBtn.x, this.upgradeManaBtn.y, this.upgradeManaBtn.w, this.upgradeManaBtn.h);
     ctx.fillStyle = '#ffffff';
@@ -212,27 +204,24 @@ class GameScreen {
       return;
     }
 
-    // Invocar Duende
     const gBtn = this.spawnGoblinBtn;
     if (x >= gBtn.x && x <= gBtn.x + gBtn.w && y >= gBtn.y && y <= gBtn.y + gBtn.h) {
       if (this.mana >= this.goblinCost) {
         this.mana -= this.goblinCost;
 
-        // Crear e instanciar el Duende en la posición inicial
         this.troops.push({
           x: this.path[0].x,
           y: this.path[0].y,
           pathIndex: 1,
-          speed: 75, // Velocidad equilibrada en px/seg
+          speed: 75,
           hp: 30,
-          color: '#22c55e' // Verde Duende
+          color: '#22c55e'
         });
 
         this.enemyGold += 10;
       }
     }
 
-    // Mejorar Maná
     const mBtn = this.upgradeManaBtn;
     if (x >= mBtn.x && x <= mBtn.x + mBtn.w && y >= mBtn.y && y <= mBtn.y + mBtn.h) {
       if (this.mana >= 50) {
