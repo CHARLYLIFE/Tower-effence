@@ -1,41 +1,34 @@
 // =================================================================
-// ARCHIVO: js/GameScreen.js (COMPLETO)
-// Sistema de Juego, Canvas, Unidades Animadas y Economía
+// ARCHIVO: js/screen/GameScreen.js (COMPLETO)
 // =================================================================
 
-// --- CLASE UNIDAD: GOBLIN (DUENDE ANIMADO) ---
 class Goblin {
     constructor(path) {
-        // Posición e inicio en el camino
         this.path = path;
         this.pathIndex = 0;
         this.x = path[0].x;
         this.y = path[0].y;
-        this.speed = 60; // Píxeles por segundo
+        this.speed = 60;
 
-        // Atributos de juego
         this.hp = 100;
         this.maxHp = 100;
         this.cost = 25;
         this.reachedEnd = false;
 
-        // Carga de la imagen de sprites
+        // Carga del sprite de la unidad
         this.sprite = new Image();
-        this.sprite.src = 'assets/images/goblin_spritesheet.png'; // Ruta en tu GitHub
+        this.sprite.src = 'assets/images/goblin_spritesheet.png';
 
-        // Configuración de animación (Sprite Sheet 4x1)
         this.totalFrames = 4;
         this.currentFrame = 0;
         this.animationTimer = 0;
-        this.animationSpeed = 8; // Fotogramas por segundo
+        this.animationSpeed = 8;
 
-        // Dimensiones del personaje en pantalla
         this.width = 48;
         this.height = 48;
     }
 
     update(deltaTime) {
-        // 1. Movimiento por los puntos del camino
         if (this.pathIndex < this.path.length - 1) {
             const target = this.path[this.pathIndex + 1];
             const dx = target.x - this.x;
@@ -52,7 +45,6 @@ class Goblin {
             this.reachedEnd = true;
         }
 
-        // 2. Animación de fotogramas
         this.animationTimer += deltaTime;
         if (this.animationTimer >= 1 / this.animationSpeed) {
             this.animationTimer = 0;
@@ -61,28 +53,26 @@ class Goblin {
     }
 
     draw(ctx) {
-        // Renderizado del sprite animado si la imagen ya cargó
-        if (this.sprite.complete && this.sprite.naturalWidth !== 0) {
+        if (this.sprite.complete && this.sprite.naturalWidth > 0) {
             const frameWidth = this.sprite.naturalWidth / this.totalFrames;
             const frameHeight = this.sprite.naturalHeight;
 
             ctx.drawImage(
                 this.sprite,
-                this.currentFrame * frameWidth, 0, // Recorte X, Y en la hoja
-                frameWidth, frameHeight,           // Ancho y alto de 1 frame
-                this.x - this.width / 2,           // Posición X en Canvas (centrado)
-                this.y - this.height / 2,          // Posición Y en Canvas (centrado)
-                this.width, this.height            // Tamaño final renderizado
+                this.currentFrame * frameWidth, 0,
+                frameWidth, frameHeight,
+                this.x - this.width / 2,
+                this.y - this.height / 2,
+                this.width, this.height
             );
         } else {
-            // Respaldo de color por si tarda en cargar
+            // Círculo de respaldo si la imagen aún no descarga
             ctx.fillStyle = '#4ade80';
             ctx.beginPath();
             ctx.arc(this.x, this.y, 16, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // Barra de vida superior
         this.drawHealthBar(ctx);
     }
 
@@ -101,27 +91,24 @@ class Goblin {
     }
 }
 
-// --- CLASE PRINCIPAL DEL JUEGO ---
 class GameScreen {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.lastTime = performance.now();
 
-        // Sistema de Mana y Economía
         this.mana = 150;
         this.maxMana = 150;
-        this.manaRegenRate = 12; // Mana recuperado por segundo
+        this.manaRegenRate = 12;
 
-        // Lista de unidades en pantalla
         this.units = [];
 
-        // Camino del mapa (Puntos tácticos)
+        // Puntos del mapa para recorrer
         this.path = [
-            { x: 40, y: 550 },
-            { x: 40, y: 200 },
-            { x: 320, y: 200 },
-            { x: 320, y: 50 }
+            { x: 50, y: 480 },
+            { x: 50, y: 180 },
+            { x: 310, y: 180 },
+            { x: 310, y: 40 }
         ];
 
         this.initLoop();
@@ -136,15 +123,13 @@ class GameScreen {
     }
 
     update(currentTime) {
-        const deltaTime = (currentTime - this.lastTime) / 1000;
+        const deltaTime = Math.min((currentTime - this.lastTime) / 1000, 0.1);
         this.lastTime = currentTime;
 
-        // Regeneración continua de Mana
         if (this.mana < this.maxMana) {
             this.mana = Math.min(this.maxMana, this.mana + this.manaRegenRate * deltaTime);
         }
 
-        // Actualizar unidades y eliminar las que llegaron al final
         for (let i = this.units.length - 1; i >= 0; i--) {
             const unit = this.units[i];
             unit.update(deltaTime);
@@ -153,28 +138,29 @@ class GameScreen {
             }
         }
 
-        // Dibujar frame
         this.draw();
-
         requestAnimationFrame((time) => this.update(time));
     }
 
     draw() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // Fondo del mapa verde oscuro/pasto
+        this.ctx.fillStyle = '#1e293b';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // 1. Dibujar el Camino
+        // Dibujar el Camino
         this.drawPath();
 
-        // 2. Dibujar Unidades Animadas
+        // Dibujar Unidades
         this.units.forEach(unit => unit.draw(this.ctx));
 
-        // 3. Dibujar Interfaz de Mana (HUD)
+        // Dibujar Interfaz (HUD)
         this.drawUI();
     }
 
     drawPath() {
-        this.ctx.strokeStyle = '#2a323d';
-        this.ctx.lineWidth = 36;
+        // Borde del camino
+        this.ctx.strokeStyle = '#0f172a';
+        this.ctx.lineWidth = 38;
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
 
@@ -185,29 +171,25 @@ class GameScreen {
         }
         this.ctx.stroke();
 
-        // Borde interno del camino
-        this.ctx.strokeStyle = '#3b4252';
+        // Centro del camino (tierra)
+        this.ctx.strokeStyle = '#64748b';
         this.ctx.lineWidth = 30;
         this.ctx.stroke();
     }
 
     drawUI() {
-        // Barra de Mana en la parte superior
         const barWidth = 200;
         const barHeight = 16;
         const x = (this.canvas.width - barWidth) / 2;
-        const y = 15;
+        const y = 12;
 
-        // Fondo de la barra
         this.ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
         this.ctx.fillRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
 
-        // Relleno de Mana
         const manaRatio = this.mana / this.maxMana;
         this.ctx.fillStyle = '#3b82f6';
         this.ctx.fillRect(x, y, barWidth * manaRatio, barHeight);
 
-        // Texto de Mana
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 12px sans-serif';
         this.ctx.textAlign = 'center';
