@@ -4,10 +4,10 @@ class GameScreen {
     
     // Recursos
     this.mana = 100;
-    this.maxMana = 100;
-    this.manaRegen = 12;
+    this.maxMana = 150;
+    this.manaRegen = 8; // Regeneración moderada
     this.enemyGold = 0;
-    this.score = 0; // Invasiones exitosas
+    this.score = 0;
 
     // Camino Táctico
     this.path = [
@@ -20,22 +20,22 @@ class GameScreen {
     ];
 
     this.troops = [];
-    this.projectiles = []; // Proyectiles disparados por las torres
+    this.projectiles = [];
 
     // Parcelas y Torres Enemigas
     this.plots = [
-      { id: 1, x: 140, y: 530, level: 1, type: 'Arquero', range: 75, damage: 8, attackCooldown: 0, cooldownMax: 0.8, costNext: 40 },
-      { id: 2, x: 60,  y: 320, level: 0, type: 'Vacío',   range: 0,  damage: 0, attackCooldown: 0, cooldownMax: 1.2, costNext: 30 },
-      { id: 3, x: 220, y: 320, level: 0, type: 'Vacío',   range: 0,  damage: 0, attackCooldown: 0, cooldownMax: 1.0, costNext: 45 },
-      { id: 4, x: 140, y: 140, level: 0, type: 'Vacío',   range: 0,  damage: 0, attackCooldown: 0, cooldownMax: 1.0, costNext: 60 }
+      { id: 1, x: 140, y: 530, level: 1, type: 'Arquero', range: 80, damage: 14, attackCooldown: 0, cooldownMax: 0.7, costNext: 35 },
+      { id: 2, x: 60,  y: 320, level: 0, type: 'Vacío',   range: 0,  damage: 0,  attackCooldown: 0, cooldownMax: 1.0, costNext: 30 },
+      { id: 3, x: 220, y: 320, level: 0, type: 'Vacío',   range: 0,  damage: 0,  attackCooldown: 0, cooldownMax: 1.0, costNext: 45 },
+      { id: 4, x: 140, y: 140, level: 0, type: 'Vacío',   range: 0,  damage: 0,  attackCooldown: 0, cooldownMax: 0.8, costNext: 55 }
     ];
 
-    // UI
+    // UI: Dos botones de tropas abajo (Duende y Orco Tanque)
     this.spawnGoblinBtn = { x: 15,  y: 565, w: 150, h: 55 };
-    this.upgradeManaBtn = { x: 195, y: 565, w: 150, h: 55 };
+    this.spawnOrcBtn    = { x: 195, y: 565, w: 150, h: 55 };
 
-    this.goblinLevel = 1;
     this.goblinCost = 20;
+    this.orcCost = 45;
   }
 
   update(dt) {
@@ -58,8 +58,7 @@ class GameScreen {
         if (dist < 3) {
           t.pathIndex++;
           if (t.pathIndex >= this.path.length) {
-            // ¡Tropa enemiga superó las defensas!
-            this.score++;
+            this.score++; // ¡Invasión exitosa!
             this.troops.splice(i, 1);
             continue;
           }
@@ -69,22 +68,19 @@ class GameScreen {
         }
       }
 
-      // Si la vida de la tropa llega a 0, muere
       if (t.hp <= 0) {
-        this.enemyGold += 15; // Recompensa para la IA
+        this.enemyGold += t.bounty; // Recompensa para la IA según la tropa
         this.troops.splice(i, 1);
       }
     }
 
-    // 3. Lógica de Torres Enemigas (Ataque y Cooldown)
+    // 3. Ataque de Torres Enemigas
     this.plots.forEach(plot => {
       if (plot.level > 0) {
-        // Reducir cooldown de disparo
         if (plot.attackCooldown > 0) {
           plot.attackCooldown -= dt;
         }
 
-        // Buscar la tropa más cercana dentro de su rango
         let closestTroop = null;
         let minDistance = plot.range;
 
@@ -96,16 +92,13 @@ class GameScreen {
           }
         });
 
-        // Si hay objetivo y la torre puede disparar
         if (closestTroop && plot.attackCooldown <= 0) {
-          plot.attackCooldown = plot.cooldownMax; // Reiniciar cooldown
-
-          // Crear proyectil dirigido a la tropa
+          plot.attackCooldown = plot.cooldownMax;
           this.projectiles.push({
             x: plot.x,
             y: plot.y,
             target: closestTroop,
-            speed: 220,
+            speed: 250,
             damage: plot.damage,
             color: plot.type === 'Arquero' ? '#fde047' : '#c084fc'
           });
@@ -113,11 +106,10 @@ class GameScreen {
       }
     });
 
-    // 4. Actualizar Proyectiles
+    // 4. Proyectiles
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
       const p = this.projectiles[i];
 
-      // Si la tropa objetivo murió mientras el proyectil viajaba, desviar o eliminar
       if (!this.troops.includes(p.target)) {
         this.projectiles.splice(i, 1);
         continue;
@@ -128,30 +120,28 @@ class GameScreen {
       const dist = Math.hypot(dx, dy);
 
       if (dist < 8) {
-        // Impacto en la tropa
         p.target.hp -= p.damage;
         this.projectiles.splice(i, 1);
       } else {
-        // Perseguir a la tropa en movimiento
         p.x += (dx / dist) * p.speed * dt;
         p.y += (dy / dist) * p.speed * dt;
       }
     }
 
-    // 5. IA Enemiga: expansión y mejora de torres según oro acumulado
+    // 5. IA Enemiga expansión
     this.plots.forEach(plot => {
       if (this.enemyGold >= plot.costNext) {
         this.enemyGold -= plot.costNext;
         plot.level++;
         if (plot.level === 1) {
           plot.type = plot.id % 2 === 0 ? 'Mago' : 'Arquero';
-          plot.range = 75;
-          plot.damage = plot.type === 'Arquero' ? 8 : 14;
+          plot.range = 80;
+          plot.damage = plot.type === 'Arquero' ? 14 : 22;
         } else {
-          plot.range += 12;
-          plot.damage += 6; // Torres más fuertes al subir nivel
+          plot.range += 15;
+          plot.damage += 8;
         }
-        plot.costNext = Math.floor(plot.costNext * 1.7);
+        plot.costNext = Math.floor(plot.costNext * 1.6);
       }
     });
   }
@@ -177,14 +167,14 @@ class GameScreen {
     ctx.lineWidth = 4;
     ctx.stroke();
 
-    // 3. Base Enemiga (Meta)
+    // 3. Base Enemiga
     const base = this.path[this.path.length - 1];
     ctx.fillStyle = '#ef4444';
     ctx.beginPath();
     ctx.arc(base.x, base.y, 22, 0, Math.PI * 2);
     ctx.fill();
 
-    // 4. Parcelas y Torres Enemigas
+    // 4. Parcelas y Torres
     this.plots.forEach(p => {
       if (p.level === 0) {
         ctx.fillStyle = '#475569';
@@ -211,33 +201,31 @@ class GameScreen {
       }
     });
 
-    // 5. Tropas Activas y sus Barras de Vida
+    // 5. Tropas
     this.troops.forEach(t => {
-      // Sombra
       ctx.fillStyle = 'rgba(0,0,0,0.3)';
       ctx.beginPath();
-      ctx.arc(t.x, t.y + 6, 8, 0, Math.PI * 2);
+      ctx.arc(t.x, t.y + 6, t.radius + 2, 0, Math.PI * 2);
       ctx.fill();
 
-      // Cuerpo
       ctx.fillStyle = t.color;
       ctx.beginPath();
-      ctx.arc(t.x, t.y, 9, 0, Math.PI * 2);
+      ctx.arc(t.x, t.y, t.radius, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Mini barra de vida sobre la tropa
+      // Barra de vida
       ctx.fillStyle = '#000000';
-      ctx.fillRect(t.x - 10, t.y - 18, 20, 4);
+      ctx.fillRect(t.x - 12, t.y - t.radius - 10, 24, 4);
       ctx.fillStyle = '#22c55e';
-      const hpWidth = Math.max(0, (t.hp / t.maxHp) * 20);
-      ctx.fillRect(t.x - 10, t.y - 18, hpWidth, 4);
+      const hpWidth = Math.max(0, (t.hp / t.maxHp) * 24);
+      ctx.fillRect(t.x - 12, t.y - t.radius - 10, hpWidth, 4);
     });
 
-    // 6. Proyectiles en el aire
+    // 6. Proyectiles
     this.projectiles.forEach(pr => {
       ctx.fillStyle = pr.color;
       ctx.beginPath();
@@ -271,23 +259,25 @@ class GameScreen {
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 540, 360, 100);
 
+    // Botón Duende (Verde)
     ctx.fillStyle = this.mana >= this.goblinCost ? '#10b981' : '#334155';
     ctx.fillRect(this.spawnGoblinBtn.x, this.spawnGoblinBtn.y, this.spawnGoblinBtn.w, this.spawnGoblinBtn.h);
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`DUENDE Lvl ${this.goblinLevel}`, this.spawnGoblinBtn.x + 75, this.spawnGoblinBtn.y + 24);
+    ctx.fillText(`DUENDE`, this.spawnGoblinBtn.x + 75, this.spawnGoblinBtn.y + 24);
     ctx.font = '10px sans-serif';
     ctx.fillText(`Costo: ${this.goblinCost} 💧`, this.spawnGoblinBtn.x + 75, this.spawnGoblinBtn.y + 42);
 
-    ctx.fillStyle = this.mana >= 50 ? '#8b5cf6' : '#334155';
-    ctx.fillRect(this.upgradeManaBtn.x, this.upgradeManaBtn.y, this.upgradeManaBtn.w, this.upgradeManaBtn.h);
+    // Botón Orco Tanque (Naranja/Marrón)
+    ctx.fillStyle = this.mana >= this.orcCost ? '#d97706' : '#334155';
+    ctx.fillRect(this.spawnOrcBtn.x, this.spawnOrcBtn.y, this.spawnOrcBtn.w, this.spawnOrcBtn.h);
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('+REGEN MANÁ', this.upgradeManaBtn.x + 75, this.upgradeManaBtn.y + 24);
+    ctx.fillText(`ORCO TANQUE`, this.spawnOrcBtn.x + 75, this.spawnOrcBtn.y + 24);
     ctx.font = '10px sans-serif';
-    ctx.fillText('Costo: 50 💧', this.upgradeManaBtn.x + 75, this.upgradeManaBtn.y + 42);
+    ctx.fillText(`Costo: ${this.orcCost} 💧`, this.spawnOrcBtn.x + 75, this.spawnOrcBtn.y + 42);
   }
 
   handleTouch(x, y) {
@@ -297,29 +287,43 @@ class GameScreen {
       return;
     }
 
+    // Invocar Duende (Rápido, económico, frágil)
     const gBtn = this.spawnGoblinBtn;
     if (x >= gBtn.x && x <= gBtn.x + gBtn.w && y >= gBtn.y && y <= gBtn.y + gBtn.h) {
       if (this.mana >= this.goblinCost) {
         this.mana -= this.goblinCost;
 
-        // Instanciar Duende con barra de vida
         this.troops.push({
           x: this.path[0].x,
           y: this.path[0].y,
           pathIndex: 1,
-          speed: 70,
-          hp: 40,
-          maxHp: 40,
-          color: '#22c55e'
+          speed: 75,
+          hp: 25,
+          maxHp: 25,
+          radius: 8,
+          color: '#22c55e',
+          bounty: 15
         });
       }
     }
 
-    const mBtn = this.upgradeManaBtn;
-    if (x >= mBtn.x && x <= mBtn.x + mBtn.w && y >= mBtn.y && y <= mBtn.y + mBtn.h) {
-      if (this.mana >= 50) {
-        this.mana -= 50;
-        this.manaRegen += 6;
+    // Invocar Orco Tanque (Lento, resistente, absorbe daño)
+    const oBtn = this.spawnOrcBtn;
+    if (x >= oBtn.x && x <= oBtn.x + oBtn.w && y >= oBtn.y && y <= oBtn.y + oBtn.h) {
+      if (this.mana >= this.mana >= 0 && this.mana >= this.orcCost) {
+        this.mana -= this.orcCost;
+
+        this.troops.push({
+          x: this.path[0].x,
+          y: this.path[0].y,
+          pathIndex: 1,
+          speed: 45,
+          hp: 90,
+          maxHp: 90,
+          radius: 12,
+          color: '#b45309',
+          bounty: 35
+        });
       }
     }
   }
