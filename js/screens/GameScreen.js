@@ -8,27 +8,28 @@ class Goblin {
         this.pathIndex = 0;
         this.x = path[0].x;
         this.y = path[0].y;
-        this.speed = 60;
+        this.speed = 60; // Píxeles por segundo
 
         this.hp = 100;
         this.maxHp = 100;
         this.cost = 25;
         this.reachedEnd = false;
 
-        // Carga del sprite de la unidad
+        // Carga de la hoja de sprites desde assets
         this.sprite = new Image();
         this.sprite.src = 'assets/images/goblin_spritesheet.png';
 
         this.totalFrames = 4;
         this.currentFrame = 0;
         this.animationTimer = 0;
-        this.animationSpeed = 8;
+        this.animationSpeed = 8; // FPS de la animación
 
         this.width = 48;
         this.height = 48;
     }
 
     update(deltaTime) {
+        // Movimiento por el camino
         if (this.pathIndex < this.path.length - 1) {
             const target = this.path[this.pathIndex + 1];
             const dx = target.x - this.x;
@@ -45,6 +46,7 @@ class Goblin {
             this.reachedEnd = true;
         }
 
+        // Animación de fotogramas
         this.animationTimer += deltaTime;
         if (this.animationTimer >= 1 / this.animationSpeed) {
             this.animationTimer = 0;
@@ -53,6 +55,7 @@ class Goblin {
     }
 
     draw(ctx) {
+        // Si la imagen cargó, recortar frame de la hoja
         if (this.sprite.complete && this.sprite.naturalWidth > 0) {
             const frameWidth = this.sprite.naturalWidth / this.totalFrames;
             const frameHeight = this.sprite.naturalHeight;
@@ -66,7 +69,7 @@ class Goblin {
                 this.width, this.height
             );
         } else {
-            // Círculo de respaldo si la imagen aún no descarga
+            // Círculo provisional por si tarda en descargar
             ctx.fillStyle = '#4ade80';
             ctx.beginPath();
             ctx.arc(this.x, this.y, 16, 0, Math.PI * 2);
@@ -103,7 +106,7 @@ class GameScreen {
 
         this.units = [];
 
-        // Puntos del mapa para recorrer
+        // Puntos del camino para la oleada
         this.path = [
             { x: 50, y: 480 },
             { x: 50, y: 180 },
@@ -126,10 +129,12 @@ class GameScreen {
         const deltaTime = Math.min((currentTime - this.lastTime) / 1000, 0.1);
         this.lastTime = currentTime;
 
+        // Regeneración de Mana
         if (this.mana < this.maxMana) {
             this.mana = Math.min(this.maxMana, this.mana + this.manaRegenRate * deltaTime);
         }
 
+        // Actualizar posiciones
         for (let i = this.units.length - 1; i >= 0; i--) {
             const unit = this.units[i];
             unit.update(deltaTime);
@@ -143,22 +148,17 @@ class GameScreen {
     }
 
     draw() {
-        // Fondo del mapa verde oscuro/pasto
+        // Limpiar pantalla y dibujar mapa
         this.ctx.fillStyle = '#1e293b';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Dibujar el Camino
         this.drawPath();
-
-        // Dibujar Unidades
         this.units.forEach(unit => unit.draw(this.ctx));
-
-        // Dibujar Interfaz (HUD)
         this.drawUI();
     }
 
     drawPath() {
-        // Borde del camino
+        // Borde exterior del camino
         this.ctx.strokeStyle = '#0f172a';
         this.ctx.lineWidth = 38;
         this.ctx.lineCap = 'round';
@@ -171,13 +171,14 @@ class GameScreen {
         }
         this.ctx.stroke();
 
-        // Centro del camino (tierra)
+        // Sendero de tierra
         this.ctx.strokeStyle = '#64748b';
         this.ctx.lineWidth = 30;
         this.ctx.stroke();
     }
 
     drawUI() {
+        // Barra de Mana superior
         const barWidth = 200;
         const barHeight = 16;
         const x = (this.canvas.width - barWidth) / 2;
