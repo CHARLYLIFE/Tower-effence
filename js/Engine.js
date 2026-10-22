@@ -14,7 +14,6 @@ class Engine {
       const rect = this.canvas.getBoundingClientRect();
       const touch = e.touches ? e.touches[0] : e;
       
-      // Escalar coordenadas táctiles a la resolución interna del canvas (360x640)
       const scaleX = this.canvas.width / rect.width;
       const scaleY = this.canvas.height / rect.height;
 
@@ -34,7 +33,9 @@ class Engine {
   }
 
   loop(currentTime) {
-    const dt = (currentTime - this.lastTime) / 1000;
+    // Calculamos el dt y le ponemos un tope máximo (max 0.05s) para frenar aceleraciones
+    let dt = (currentTime - this.lastTime) / 1000;
+    if (dt > 0.05) dt = 0.05; 
     this.lastTime = currentTime;
 
     this.stateManager.update(dt);
