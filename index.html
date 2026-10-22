@@ -1,23 +1,37 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Tower Offense - CHARLY</title>
-  <link rel="stylesheet" href="css/style.css">
-  <meta name="theme-color" content="#0b0f19">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Inverted Tower Defense</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <div id="app-container">
-    <canvas id="gameCanvas" width="360" height="640"></canvas>
-  </div>
+    <div id="game-container">
+        <!-- Canvas donde se dibuja el mapa y los duendes -->
+        <canvas id="gameCanvas" width="360" height="600"></canvas>
 
-  <!-- Scripts en orden estricto de dependencia -->
-  <script src="js/StateManager.js"></script>
-  <script src="js/screens/MenuScreen.js"></script>
-  <script src="js/screens/GameScreen.js"></script>
-  <script src="js/Engine.js"></script>
-  <script src="js/main.js"></script>
+        <!-- Panel de Botones para Invocación de Unidades -->
+        <div id="ui-panel">
+            <button id="btn-goblin" class="unit-btn">
+                <span class="unit-name">DUENDE</span>
+                <span class="unit-cost">💧 25 Mana</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Carga del juego -->
+    <script src="js/GameScreen.js"></script>
+    <script>
+        // Inicialización
+        const canvas = document.getElementById('gameCanvas');
+        const game = new GameScreen(canvas);
+
+        // Asignar evento al botón de invocar duende
+        document.getElementById('btn-goblin').addEventListener('click', () => {
+            game.spawnGoblin();
+        });
+    </script>
 </body>
 </html>
