@@ -30,8 +30,8 @@ body {
     border: 2px solid #334155;
     border-radius: 8px 8px 0 0;
     display: block;
-    width: 100%;
-    height: auto;
+    width: 360px;
+    height: 520px;
 }
 
 #ui-panel {
