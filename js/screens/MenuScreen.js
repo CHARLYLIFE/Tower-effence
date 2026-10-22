@@ -4,7 +4,7 @@ class MenuScreen {
   }
 
   update(dt) {
-    // Animaciones del menú
+    // Animaciones
   }
 
   render(ctx) {
@@ -12,7 +12,7 @@ class MenuScreen {
     ctx.fillStyle = '#0b0f19';
     ctx.fillRect(0, 0, 360, 640);
 
-    // Título y Firma CHARLY
+    // Título CHARLY
     ctx.fillStyle = '#00f2fe';
     ctx.font = 'bold 36px sans-serif';
     ctx.textAlign = 'center';
@@ -28,9 +28,7 @@ class MenuScreen {
 
     // Botón Iniciar Invasión
     ctx.fillStyle = '#10b981';
-    ctx.beginPath();
-    ctx.roundRect(this.startButton.x, this.startButton.y, this.startButton.w, this.startButton.h, 12);
-    ctx.fill();
+    ctx.fillRect(this.startButton.x, this.startButton.y, this.startButton.w, this.startButton.h);
 
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 18px sans-serif';
