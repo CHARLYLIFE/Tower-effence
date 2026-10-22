@@ -9,10 +9,10 @@
 <body>
 
     <div id="game-container">
-        <!-- Canvas donde se dibuja el mapa y los duendes -->
+        <!-- Canvas de juego -->
         <canvas id="gameCanvas" width="360" height="520"></canvas>
 
-        <!-- Panel de Botones para Invocación de Unidades -->
+        <!-- Panel de control de unidades -->
         <div id="ui-panel">
             <button id="btn-goblin" class="unit-btn">
                 <span class="unit-name">DUENDE</span>
@@ -21,21 +21,17 @@
         </div>
     </div>
 
-    <!-- Carga segura del script del juego -->
-    <script src="js/screen/GameScreen.js" onload="initGame()"></script>
+    <!-- Carga diferida del script para garantizar que el HTML esté listo -->
+    <script src="js/screen/GameScreen.js" defer></script>
     <script>
-        let game = null;
-
-        function initGame() {
+        document.addEventListener('DOMContentLoaded', () => {
             const canvas = document.getElementById('gameCanvas');
-            game = new GameScreen(canvas);
+            const game = new GameScreen(canvas);
 
             document.getElementById('btn-goblin').addEventListener('click', () => {
-                if (game) {
-                    game.spawnGoblin();
-                }
+                game.spawnGoblin();
             });
-        }
+        });
     </script>
 </body>
 </html>
